@@ -51,3 +51,23 @@
     {proposal-id: uint, voter: principal}
     {voted: bool, vote: bool}
 )
+
+;; Read-only functions
+(define-read-only (get-proposal (proposal-id uint))
+    (map-get? proposals proposal-id)
+)
+
+(define-read-only (get-stake (staker principal))
+    (map-get? stakes staker)
+)
+
+(define-read-only (get-vote (proposal-id uint) (voter principal))
+    (map-get? votes {proposal-id: proposal-id, voter: voter})
+)
+
+(define-read-only (calculate-voting-power (staker principal))
+    (match (get-stake staker)
+        stake-data (ok (get amount stake-data))
+        (ok u0)
+    )
+)
