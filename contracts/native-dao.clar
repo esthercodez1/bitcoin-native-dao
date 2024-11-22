@@ -91,3 +91,22 @@
     )
     (>= (* yes-votes u100) required-votes))
 )
+
+;; Public functions
+(define-public (stake (amount uint))
+    (let (
+        (current-stake (default-to {amount: u0, lock-until: u0} (get-stake tx-sender)))
+    )
+    (if (>= amount (var-get minimum-stake))
+        (begin
+            (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+            (map-set stakes tx-sender 
+                {
+                    amount: (+ amount (get amount current-stake)),
+                    lock-until: (+ block-height u2016) ;; ~2 weeks lock period
+                }
+            )
+            (ok true))
+        err-invalid-amount
+    ))
+)
