@@ -164,3 +164,33 @@
         err-not-stakeholder
     ))
 )
+
+(define-public (vote (proposal-id uint) (vote-bool bool))
+    (let (
+        (proposal (unwrap! (get-proposal proposal-id) err-proposal-not-found))
+        (voter-stake (unwrap! (get-stake tx-sender) err-not-stakeholder))
+        (previous-vote (get-vote proposal-id tx-sender))
+    )
+    (asserts! (is-proposal-active proposal-id) err-proposal-not-active)
+    (asserts! (is-none previous-vote) err-already-voted)
+    
+    (map-set votes {proposal-id: proposal-id, voter: tx-sender}
+        {voted: true, vote: vote-bool}
+    )
+    
+    (map-set proposals proposal-id
+        (merge proposal 
+            {
+                yes-votes: (if vote-bool 
+                    (+ (get yes-votes proposal) (get amount voter-stake))
+                    (get yes-votes proposal)
+                ),
+                no-votes: (if vote-bool
+                    (get no-votes proposal)
+                    (+ (get no-votes proposal) (get amount voter-stake))
+                )
+            }
+        )
+    )
+    (ok true))
+)
