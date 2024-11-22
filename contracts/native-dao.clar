@@ -110,3 +110,24 @@
         err-invalid-amount
     ))
 )
+
+(define-public (unstake (amount uint))
+    (let (
+        (current-stake (unwrap! (get-stake tx-sender) err-not-stakeholder))
+    )
+    (if (and
+            (<= amount (get amount current-stake))
+            (>= block-height (get lock-until current-stake))
+        )
+        (begin
+            (try! (as-contract (stx-transfer? amount (as-contract tx-sender) tx-sender)))
+            (map-set stakes tx-sender 
+                {
+                    amount: (- (get amount current-stake) amount),
+                    lock-until: (get lock-until current-stake)
+                }
+            )
+            (ok true))
+        err-not-enough-balance
+    ))
+)
