@@ -14,3 +14,9 @@
 (define-constant err-proposal-not-active (err u107))
 (define-constant err-invalid-quorum (err u108))
 (define-constant err-proposal-not-expired (err u109))
+
+;; Data Variables
+(define-data-var minimum-stake uint u100000000) ;; 1 BTC in sats
+(define-data-var proposal-count uint u0)
+(define-data-var quorum-percentage uint u51) ;; 51% required for proposal passage
+(define-data-var voting-period uint u144) ;; ~1 day in Bitcoin blocks
