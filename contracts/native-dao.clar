@@ -131,3 +131,36 @@
         err-not-enough-balance
     ))
 )
+
+(define-public (create-proposal 
+    (title (string-ascii 100))
+    (description (string-ascii 500))
+    (amount uint)
+    (recipient principal)
+)
+    (let (
+        (proposer-stake (unwrap! (get-stake tx-sender) err-not-stakeholder))
+        (proposal-id (+ (var-get proposal-count) u1))
+    )
+    (if (>= (get amount proposer-stake) (var-get minimum-stake))
+        (begin
+            (map-set proposals proposal-id
+                {
+                    title: title,
+                    description: description,
+                    proposer: tx-sender,
+                    amount: amount,
+                    recipient: recipient,
+                    start-block: block-height,
+                    end-block: (+ block-height (var-get voting-period)),
+                    yes-votes: u0,
+                    no-votes: u0,
+                    status: "active",
+                    executed: false
+                }
+            )
+            (var-set proposal-count proposal-id)
+            (ok proposal-id))
+        err-not-stakeholder
+    ))
+)
