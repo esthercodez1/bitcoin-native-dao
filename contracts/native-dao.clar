@@ -83,3 +83,11 @@
         false
     )
 )
+
+(define-private (check-quorum (yes-votes uint) (no-votes uint))
+    (let (
+        (total-votes (+ yes-votes no-votes))
+        (required-votes (* total-votes (var-get quorum-percentage)))
+    )
+    (>= (* yes-votes u100) required-votes))
+)
