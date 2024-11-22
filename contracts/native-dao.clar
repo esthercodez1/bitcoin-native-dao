@@ -71,3 +71,15 @@
         (ok u0)
     )
 )
+
+;; Private functions
+(define-private (is-proposal-active (proposal-id uint))
+    (match (get-proposal proposal-id)
+        proposal (and 
+            (< block-height (get end-block proposal))
+            (>= block-height (get start-block proposal))
+            (is-eq (get status proposal) "active")
+        )
+        false
+    )
+)
