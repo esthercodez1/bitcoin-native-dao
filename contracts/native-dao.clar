@@ -237,3 +237,12 @@
         (ok true)
     )
 )
+
+(define-public (update-quorum-percentage (new-percentage uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (and (>= new-percentage u1) (<= new-percentage u100)) err-invalid-quorum)
+        (var-set quorum-percentage new-percentage)
+        (ok true)
+    )
+)
