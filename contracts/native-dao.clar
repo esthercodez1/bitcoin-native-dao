@@ -38,3 +38,11 @@
         executed: bool
     }
 )
+
+(define-map stakes
+    principal ;; staker
+    {
+        amount: uint,
+        lock-until: uint
+    }
+)
