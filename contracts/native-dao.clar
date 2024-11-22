@@ -246,3 +246,11 @@
         (ok true)
     )
 )
+
+(define-public (update-voting-period (new-period uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (var-set voting-period new-period)
+        (ok true)
+    )
+)
