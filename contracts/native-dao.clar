@@ -46,3 +46,8 @@
         lock-until: uint
     }
 )
+
+(define-map votes
+    {proposal-id: uint, voter: principal}
+    {voted: bool, vote: bool}
+)
