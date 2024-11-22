@@ -20,3 +20,21 @@
 (define-data-var proposal-count uint u0)
 (define-data-var quorum-percentage uint u51) ;; 51% required for proposal passage
 (define-data-var voting-period uint u144) ;; ~1 day in Bitcoin blocks
+
+;; Data Maps
+(define-map proposals
+    uint ;; proposal ID
+    {
+        title: (string-ascii 100),
+        description: (string-ascii 500),
+        proposer: principal,
+        amount: uint,
+        recipient: principal,
+        start-block: uint,
+        end-block: uint,
+        yes-votes: uint,
+        no-votes: uint,
+        status: (string-ascii 20),
+        executed: bool
+    }
+)
