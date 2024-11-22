@@ -142,7 +142,12 @@
         (proposer-stake (unwrap! (get-stake tx-sender) err-not-stakeholder))
         (proposal-id (+ (var-get proposal-count) u1))
     )
-    (if (>= (get amount proposer-stake) (var-get minimum-stake))
+    (if (and
+            (>= (get amount proposer-stake) (var-get minimum-stake))
+            (> (len title) u0)
+            (> (len description) u0)
+            (> amount u0)
+        )
         (begin
             (map-set proposals proposal-id
                 {
@@ -233,6 +238,7 @@
 (define-public (update-minimum-stake (new-minimum uint))
     (begin
         (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (> new-minimum u0) err-invalid-amount)
         (var-set minimum-stake new-minimum)
         (ok true)
     )
@@ -250,6 +256,7 @@
 (define-public (update-voting-period (new-period uint))
     (begin
         (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (> new-period u0) err-invalid-amount)
         (var-set voting-period new-period)
         (ok true)
     )
