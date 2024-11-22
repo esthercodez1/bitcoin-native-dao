@@ -228,3 +228,12 @@
             (ok false)))
     )
 )
+
+;; Admin functions
+(define-public (update-minimum-stake (new-minimum uint))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (var-set minimum-stake new-minimum)
+        (ok true)
+    )
+)
