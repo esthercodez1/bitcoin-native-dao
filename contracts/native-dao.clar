@@ -14,6 +14,8 @@
 (define-constant err-proposal-not-active (err u107))
 (define-constant err-invalid-quorum (err u108))
 (define-constant err-proposal-not-expired (err u109))
+(define-constant err-invalid-recipient (err u110))
+(define-constant permitted-contract-caller (as-contract tx-sender))
 
 ;; Data Variables
 (define-data-var minimum-stake uint u100000000) ;; 1 BTC in sats
@@ -52,6 +54,11 @@
     {voted: bool, vote: bool}
 )
 
+;; Add a map for whitelisted recipients
+(define-map whitelisted-recipients
+    principal
+    bool)
+
 ;; Read-only functions
 (define-read-only (get-proposal (proposal-id uint))
     (map-get? proposals proposal-id)
@@ -72,6 +79,20 @@
     )
 )
 
+;; Read-only function to check if a recipient is whitelisted
+(define-read-only (is-whitelisted (address principal))
+    (default-to false (map-get? whitelisted-recipients address)))
+
+;; Enhanced validation function
+(define-read-only (is-valid-recipient (address principal))
+    (and 
+        ;; Check that recipient is not the contract itself
+        (not (is-eq address permitted-contract-caller))
+        ;; Check that recipient is not the zero address
+        (not (is-eq address 'SP000000000000000000002Q6VF78))
+        ;; Check if recipient is whitelisted
+        (is-whitelisted address)))
+
 ;; Private functions
 (define-private (is-proposal-active (proposal-id uint))
     (match (get-proposal proposal-id)
@@ -91,6 +112,15 @@
     )
     (>= (* yes-votes u100) required-votes))
 )
+
+;; Add helper function to validate recipient
+(define-private (is-valid-recipient-private (address principal))
+       (and 
+           ;; Check that recipient is not the contract itself
+           (not (is-eq address (as-contract tx-sender)))
+           ;; Check that recipient is not the zero address
+           (not (is-eq address 'SP000000000000000000002Q6VF78)))
+   )
 
 ;; Public functions
 (define-public (stake (amount uint))
@@ -141,34 +171,32 @@
     (let (
         (proposer-stake (unwrap! (get-stake tx-sender) err-not-stakeholder))
         (proposal-id (+ (var-get proposal-count) u1))
+        (is-recipient-valid (is-valid-recipient recipient))
     )
-    (if (and
-            (>= (get amount proposer-stake) (var-get minimum-stake))
-            (> (len title) u0)
-            (> (len description) u0)
-            (> amount u0)
-        )
-        (begin
-            (map-set proposals proposal-id
-                {
-                    title: title,
-                    description: description,
-                    proposer: tx-sender,
-                    amount: amount,
-                    recipient: recipient,
-                    start-block: block-height,
-                    end-block: (+ block-height (var-get voting-period)),
-                    yes-votes: u0,
-                    no-votes: u0,
-                    status: "active",
-                    executed: false
-                }
-            )
-            (var-set proposal-count proposal-id)
-            (ok proposal-id))
-        err-not-stakeholder
-    ))
+    (asserts! is-recipient-valid err-invalid-recipient)
+    (asserts! (>= (get amount proposer-stake) (var-get minimum-stake)) err-not-stakeholder)
+    (asserts! (and (> (len title) u0) (> (len description) u0)) err-invalid-amount)
+    (asserts! (> amount u0) err-invalid-amount)
+    
+    (map-set proposals proposal-id
+        {
+            title: title,
+            description: description,
+            proposer: tx-sender,
+            amount: amount,
+            recipient: recipient,
+            start-block: block-height,
+            end-block: (+ block-height (var-get voting-period)),
+            yes-votes: u0,
+            no-votes: u0,
+            status: "active",
+            executed: false
+        }
+    )
+    (var-set proposal-count proposal-id)
+    (ok proposal-id))
 )
+
 
 (define-public (vote (proposal-id uint) (vote-bool bool))
     (let (
@@ -261,3 +289,19 @@
         (ok true)
     )
 )
+
+;; Initialize function to be called once by contract owner
+(define-public (initialize-contract)
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        ;; Initialize whitelisted-recipients with the contract owner
+        (map-set whitelisted-recipients contract-owner true)
+        (ok true)))
+
+;; Function to add/remove whitelisted recipients
+(define-public (set-whitelisted-recipient (recipient principal) (status bool))
+    (begin
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-valid-recipient recipient) err-invalid-recipient)
+        (map-set whitelisted-recipients recipient status)
+        (ok true)))
